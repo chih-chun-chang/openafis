@@ -4,7 +4,7 @@
 
 //-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 #include "Template.h"
-
+#include "MatchManyGPU.h" 
 
 //-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 // Instantiate on the heap.
@@ -22,7 +22,11 @@ public:
         m_pairs.reserve(100);
     }
 
-    void compute(ResultType& result, const FingerprintType& probe, const FingerprintType& candidate) const;
+    void compute_global_matching_cpu(ResultType& result, const FingerprintType& probe, const FingerprintType& candidate) const;
+    void compute_global_matching_gpu(ResultType& result, const FingerprintType& probe, const FingerprintType& candidate) const;
+    //void compute(ResultType& result, const FingerprintType& probe, const FingerprintType& candidate) const;
+    void compute(const FingerprintType& probe, const FingerprintType& candidate) const;
+    std::vector<MinutiaPairGPU> buildGpuPairs() const;
 
 private:
     using Dupes = std::unordered_set<Field::MinutiaKeyType>;
@@ -31,6 +35,7 @@ private:
     mutable Dupes m_probeDupes;
     mutable Dupes m_candidateDupes;
     mutable std::vector<PairType> m_pairs;
+
 };
 
 using MatchSimilarity = Match<uint8_t, Fingerprint, MinutiaPoint::Pair>;

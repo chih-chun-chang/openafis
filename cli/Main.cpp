@@ -18,6 +18,10 @@
 #include <thread>
 #include <vector>
 
+#include "Match.h"
+#include "MatchManyGPU.h"   // for GpuTemplatePool, FingerprintGPU, launch_* etc
+#include "Param.h"
+#include "FastMath.h"
 
 //-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 constexpr auto LineWidth = 100;
@@ -184,7 +188,9 @@ static void one(const std::string& path, const std::string& f1, const std::strin
         uint8_t s {};
 
         const auto start = std::chrono::steady_clock::now();
-        match.compute(s, a.fingerprints()[0], b.fingerprints()[0]);
+        //FIXME:
+        //match.compute(s, a.fingerprints()[0], b.fingerprints()[0]);
+        match.compute(a.fingerprints()[0], b.fingerprints()[0]);
         const auto finish = std::chrono::steady_clock::now();
         const auto us = std::chrono::duration_cast<std::chrono::microseconds>(finish - start);
 
@@ -229,9 +235,16 @@ static void oneMany(const std::string& path, const std::string& f1, const int lo
     const auto size = std::accumulate(candidates.begin(), candidates.end(), size_t {}, [](size_t sum, const auto& t) { return sum + t.bytes(); });
     Log::test("Loaded ", candidates.size() + 1, " templates (requiring ", size, " bytes)");
 
+    // stable sort candidates by id to ensure consistent results across runs
+    std::sort(candidates.begin(), candidates.end(),
+        [](const TemplateType& a, const TemplateType& b) {
+            return a.id() < b.id();   // or some other stable key
+    });
+
+    
     Log::test(Log::LF, "Matching 1:", candidates.size());
 
-    for (auto i = 1; i <= 3; ++i) {
+    for (auto i = 1; i <= 1; ++i) {
         Log::test(Log::LF, "Pass ", i, "...");
         std::this_thread::sleep_for(std::chrono::seconds(1));
 
@@ -242,7 +255,7 @@ static void oneMany(const std::string& path, const std::string& f1, const int lo
 
         if (result.second) {
             Log::test(
-                "    Matched", Log::LF, "    probe [", probe.id(), "]", Log::LF, "    and candidate [", result.second->id(), "]", Log::LF, "    with ", static_cast<int>(result.first), "% similarity");
+                "    Matched", Log::LF, "    probe [", probe.id(), "]", Log::LF, "    and candidate [", result.second->id(), "]", Log::LF, "    candidate index = ", result.second - candidates.data(), Log::LF, "    with ", static_cast<int>(result.first), "% similarity");
         } else {
             Log::test("    No matches");
         }

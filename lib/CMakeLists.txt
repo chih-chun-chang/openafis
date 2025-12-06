@@ -7,5 +7,23 @@ file(GLOB
     *.cpp
     *.h)
 
+# Add CUDA source explicitly
+set(LIB_CUDA_FILES
+    MatchManyGPU.cu
+)
+
 include_directories(${PROJECT_SOURCE_DIR}/3rdparty)
-add_library(openafis STATIC ${LIB_FILES})
+include_directories(${PROJECT_SOURCE_DIR}/lib)
+add_library(openafis STATIC ${LIB_FILES} ${LIB_CUDA_FILES})
+
+set_target_properties(openafis PROPERTIES
+    CUDA_SEPARABLE_COMPILATION ON
+)
+
+target_include_directories(openafis PRIVATE
+    ${PROJECT_SOURCE_DIR}/3rdparty
+    ${PROJECT_SOURCE_DIR}/lib
+    ${CMAKE_CUDA_TOOLKIT_INCLUDE_DIRECTORIES}
+)
+
+target_link_libraries(openafis PUBLIC taskflow)
